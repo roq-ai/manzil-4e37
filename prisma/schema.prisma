@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model booking {
+  id           String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  passenger_id String?    @db.Uuid
+  driver_id    String?    @db.Uuid
+  vehicle_id   String?    @db.Uuid
+  status       String?    @db.VarChar(255)
+  created_at   DateTime   @default(now()) @db.Timestamp(6)
+  updated_at   DateTime   @default(now()) @db.Timestamp(6)
+  driver       driver?    @relation(fields: [driver_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  passenger    passenger? @relation(fields: [passenger_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vehicle      vehicle?   @relation(fields: [vehicle_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model driver {
+  id                                 String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id                            String?   @db.Uuid
+  vehicle_id                         String?   @db.Uuid
+  current_location                   String?   @db.VarChar(255)
+  created_at                         DateTime  @default(now()) @db.Timestamp(6)
+  updated_at                         DateTime  @default(now()) @db.Timestamp(6)
+  booking                            booking[]
+  user                               user?     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vehicle_driver_vehicle_idTovehicle vehicle?  @relation("driver_vehicle_idTovehicle", fields: [vehicle_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vehicle_vehicle_driver_idTodriver  vehicle[] @relation("vehicle_driver_idTodriver")
+}
+
+model organization {
+  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  description String?   @db.VarChar(255)
+  image       String?   @db.VarChar(255)
+  name        String    @db.VarChar(255)
+  created_at  DateTime  @default(now()) @db.Timestamp(6)
+  updated_at  DateTime  @default(now()) @db.Timestamp(6)
+  user_id     String    @db.Uuid
+  tenant_id   String    @db.VarChar(255)
+  user        user      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vehicle     vehicle[]
+}
+
+model passenger {
+  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id    String?   @db.Uuid
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @default(now()) @db.Timestamp(6)
+  booking    booking[]
+  user       user?     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String         @unique @db.VarChar(255)
+  firstName    String?        @db.VarChar(255)
+  lastName     String?        @db.VarChar(255)
+  roq_user_id  String         @db.VarChar(255)
+  tenant_id    String         @db.VarChar(255)
+  created_at   DateTime       @default(now()) @db.Timestamp(6)
+  updated_at   DateTime       @default(now()) @db.Timestamp(6)
+  driver       driver[]
+  organization organization[]
+  passenger    passenger[]
+}
+
+model vehicle {
+  id                                String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  organization_id                   String?       @db.Uuid
+  driver_id                         String?       @db.Uuid
+  created_at                        DateTime      @default(now()) @db.Timestamp(6)
+  updated_at                        DateTime      @default(now()) @db.Timestamp(6)
+  booking                           booking[]
+  driver_driver_vehicle_idTovehicle driver[]      @relation("driver_vehicle_idTovehicle")
+  driver_vehicle_driver_idTodriver  driver?       @relation("vehicle_driver_idTodriver", fields: [driver_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  organization                      organization? @relation(fields: [organization_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
